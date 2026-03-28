@@ -149,3 +149,15 @@ class PosOrder(models.Model):
                 "fiscal_error_message": str(exc),
             })
             raise UserError(f"Bridge error: {str(exc)}")
+            def create(self, vals_list):
+    orders = super().create(vals_list)
+
+    for order in orders:
+        try:
+            order.action_send_to_fiscalnet()
+        except Exception as e:
+            # never break POS
+            order.fiscal_state = "error"
+            order.fiscal_error_message = str(e)
+
+    return orders
