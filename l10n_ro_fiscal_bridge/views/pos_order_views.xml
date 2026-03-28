@@ -5,10 +5,10 @@
         <field name="inherit_id" ref="point_of_sale.view_pos_pos_form"/>
         <field name="arch" type="xml">
             <xpath expr="//header" position="inside">
-                <button name="action_debug_build_fiscal_text"
-                        type="object"
-                        string="Generate Fiscal Text"
-                        class="btn-primary"/>
+           <button name="action_send_to_fiscalnet"
+        type="object"
+        string="Send to Fiscal Printer"
+        class="btn-primary"/>
             </xpath>
 
             <xpath expr="//sheet/notebook" position="after">
