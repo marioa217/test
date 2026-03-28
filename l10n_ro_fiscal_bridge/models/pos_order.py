@@ -1,4 +1,7 @@
+import requests
+
 from odoo import models, fields
+from odoo.exceptions import UserError
 
 
 class PosOrder(models.Model):
@@ -28,14 +31,6 @@ class PosOrder(models.Model):
     def _map_department_group(self, line):
         return "1"
 
-    def _map_payment_type(self, payment):
-        name = (payment.payment_method_id.name or "").lower()
-        if "cash" in name or "numerar" in name:
-            return "1"
-        if "card" in name:
-            return "2"
-        return "8"
-
     def _sanitize_product_name(self, name):
         name = (name or "").strip().replace("^", " ")
         return name[:72]
@@ -58,9 +53,18 @@ class PosOrder(models.Model):
         result.append("ST^")
 
         for payment in self.payment_ids:
+            payment_name = (payment.payment_method_id.name or "").lower()
+
+            if "cash" in payment_name or "numerar" in payment_name:
+                payment_type = "1"
+            elif "card" in payment_name:
+                payment_type = "2"
+            else:
+                payment_type = "8"
+
             result.append(
                 "P^{ptype}^{amount}".format(
-                    ptype=self._map_payment_type(payment),
+                    ptype=payment_type,
                     amount=self._format_fiscal_price(payment.amount),
                 )
             )
@@ -72,6 +76,7 @@ class PosOrder(models.Model):
         lines = self._build_fiscalnet_lines()
         text = "\n".join(lines)
         self.fiscal_raw_response = text
+
         return {
             "type": "ir.actions.client",
             "tag": "display_notification",
@@ -82,3 +87,65 @@ class PosOrder(models.Model):
                 "sticky": False,
             },
         }
+
+    def _build_bridge_payload(self):
+        self.ensure_one()
+
+        return {
+            "order_ref": (self.pos_reference or self.name or str(self.id)).replace("/", "_"),
+            "lines": [
+                {
+                    "name": line.product_id.display_name,
+                    "price": line.price_unit,
+                    "qty": line.qty,
+                }
+                for line in self.lines
+            ],
+            "payments": [
+                {
+                    "type": payment.payment_method_id.name,
+                    "amount": payment.amount,
+                }
+                for payment in self.payment_ids
+            ],
+        }
+
+    def action_send_to_fiscalnet(self):
+        self.ensure_one()
+
+        bridge_url = "https://uncleansed-glidingly-sook.ngrok-free.dev"
+        payload = self._build_bridge_payload()
+
+        self.fiscal_state = "pending"
+        self.fiscal_raw_response = str(payload)
+        self.fiscal_error_message = False
+
+        try:
+            response = requests.post(
+                f"{bridge_url}/print_cash_receipt",
+                json=payload,
+                timeout=20,
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            if data.get("ok"):
+                self.write({
+                    "fiscal_state": "done",
+                    "fiscal_receipt_no": data.get("receipt_number"),
+                    "fiscal_raw_response": str(data),
+                    "fiscal_error_message": False,
+                })
+            else:
+                self.write({
+                    "fiscal_state": "error",
+                    "fiscal_error_message": data.get("error"),
+                    "fiscal_raw_response": str(data),
+                })
+
+        except Exception as exc:
+            self.write({
+                "fiscal_state": "error",
+                "fiscal_error_message": str(exc),
+            })
+            raise UserError(f"Bridge error: {str(exc)}")
