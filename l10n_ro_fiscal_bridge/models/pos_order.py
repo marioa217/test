@@ -1,6 +1,6 @@
 import requests
 
-from odoo import models, fields
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 
 
@@ -75,7 +75,10 @@ class PosOrder(models.Model):
         self.ensure_one()
         lines = self._build_fiscalnet_lines()
         text = "\n".join(lines)
-        self.fiscal_raw_response = text
+
+        self.write({
+            "fiscal_raw_response": text,
+        })
 
         return {
             "type": "ir.actions.client",
@@ -103,7 +106,7 @@ class PosOrder(models.Model):
             ],
             "payments": [
                 {
-                    "type": payment.payment_method_id.name,
+                    "type": payment.payment_method_id.name or "",
                     "amount": payment.amount,
                 }
                 for payment in self.payment_ids
@@ -113,12 +116,26 @@ class PosOrder(models.Model):
     def action_send_to_fiscalnet(self):
         self.ensure_one()
 
+        if self.fiscal_state == "done":
+            return {
+                "type": "ir.actions.client",
+                "tag": "display_notification",
+                "params": {
+                    "title": "Already fiscalized",
+                    "message": "This order was already sent to FiscalNet.",
+                    "type": "warning",
+                    "sticky": False,
+                },
+            }
+
         bridge_url = "https://uncleansed-glidingly-sook.ngrok-free.dev"
         payload = self._build_bridge_payload()
 
-        self.fiscal_state = "pending"
-        self.fiscal_raw_response = str(payload)
-        self.fiscal_error_message = False
+        self.write({
+            "fiscal_state": "pending",
+            "fiscal_raw_response": str(payload),
+            "fiscal_error_message": False,
+        })
 
         try:
             response = requests.post(
@@ -133,6 +150,7 @@ class PosOrder(models.Model):
                 self.write({
                     "fiscal_state": "done",
                     "fiscal_receipt_no": data.get("receipt_number"),
+                    "fiscal_datetime": fields.Datetime.now(),
                     "fiscal_raw_response": str(data),
                     "fiscal_error_message": False,
                 })
@@ -143,9 +161,36 @@ class PosOrder(models.Model):
                     "fiscal_raw_response": str(data),
                 })
 
+            return {
+                "type": "ir.actions.client",
+                "tag": "display_notification",
+                "params": {
+                    "title": "FiscalNet response",
+                    "message": data.get("error") or "Order sent to FiscalNet.",
+                    "type": "success" if data.get("ok") else "warning",
+                    "sticky": False,
+                },
+            }
+
         except Exception as exc:
             self.write({
                 "fiscal_state": "error",
                 "fiscal_error_message": str(exc),
             })
             raise UserError(f"Bridge error: {str(exc)}")
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        orders = super().create(vals_list)
+
+        for order in orders:
+            try:
+                if order.lines and order.payment_ids:
+                    order.action_send_to_fiscalnet()
+            except Exception as exc:
+                order.write({
+                    "fiscal_state": "error",
+                    "fiscal_error_message": str(exc),
+                })
+
+        return orders
