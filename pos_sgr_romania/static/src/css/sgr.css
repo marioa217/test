@@ -1,0 +1,56 @@
+/* ── SGR Badge on Product Cards ───────────────────────────────────────────── */
+.sgr-badge {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: linear-gradient(135deg, #006B3C, #00913F);
+    color: #fff;
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin-top: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    width: fit-content;
+}
+
+.sgr-badge-icon {
+    font-size: 11px;
+}
+
+.sgr-badge-text {
+    text-transform: uppercase;
+}
+
+.sgr-badge-price {
+    background: rgba(255,255,255,0.2);
+    border-radius: 3px;
+    padding: 0 4px;
+    margin-left: 2px;
+}
+
+/* ── SGR Order Line ───────────────────────────────────────────────────────── */
+.sgr-orderline {
+    background-color: #f0faf3 !important;
+    border-left: 3px solid #00913F !important;
+    opacity: 0.92;
+}
+
+.sgr-orderline .product-name {
+    color: #00913F;
+    font-style: italic;
+}
+
+.sgr-line-tag {
+    display: inline-block;
+    background: #00913F;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    border-radius: 3px;
+    padding: 1px 5px;
+    margin-left: 6px;
+    vertical-align: middle;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
