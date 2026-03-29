@@ -3,7 +3,7 @@
 import { PosStore } from "@point_of_sale/app/services/pos_store";
 import { patch } from "@web/core/utils/patch";
 
-console.log("🚀 SGR V8 LOADED: Fixed Product Object Format!");
+console.log("🚀 SGR V9 LOADED: The Perfect Odoo 19 Dictionary!");
 
 patch(PosStore.prototype, {
     async addLineToCurrentOrder(vals, opts = {}, configure = true) {
@@ -13,11 +13,12 @@ patch(PosStore.prototype, {
         
         if (!line) return line;
 
-        // 2. Safely get the product that was just added
-        const productId = vals.product_id || vals.id || line.product_id?.id;
+        // 2. Safely extract the product object from Odoo's dictionary
+        const productObj = vals.product_id || vals;
+        const productId = productObj.id || vals.id;
         const product = this.models['product.product'].get(productId);
         
-        // Prevent infinite loops if the SGR Fee is being added
+        // Prevent infinite loops if the SGR Fee itself is being added
         if (product && product.default_code === 'SGR_FEE') {
             return line;
         }
@@ -31,9 +32,9 @@ patch(PosStore.prototype, {
             if (sgrProduct) {
                 console.log("✅ Found SGR Fee! Injecting 50 bani into cart...");
                 
-                // CRITICAL FIX: Pass the full 'sgrProduct' object, not a dictionary!
+                // CRITICAL FIX: Pass exactly what Odoo 19 demands -> { product_id: product_object }
                 await super.addLineToCurrentOrder(
-                    sgrProduct, 
+                    { product_id: sgrProduct }, 
                     { 
                         quantity: opts?.quantity || 1, 
                         price: 0.50, 
