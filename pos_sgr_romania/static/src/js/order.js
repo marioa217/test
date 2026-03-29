@@ -5,30 +5,30 @@ import { patch } from "@web/core/utils/patch";
 
 patch(PosOrder.prototype, {
     async add_product(product, options) {
-        // 1. Add the main product as normal
-        const result = await super.add_product(...arguments);
+        // Log what is happening
+        console.log("🛒 1. Scanned product:", product.display_name);
+        console.log("🔎 2. Is this SGR?", product.is_sgr);
 
-        // 2. Check if the added product is subject to SGR
+        const result = await super.add_product(product, options);
+
         if (product.is_sgr) {
+            console.log("✅ 3. Product is SGR! Looking for the fee product...");
             
-            // 3. Locate the SGR fee product safely across Odoo 18/19 architectural changes
-            const allProducts = this.models?.['product.product']?.getAll() 
-                             || this.pos?.models?.['product.product']?.getAll()
-                             || Object.values(this.pos?.db?.product_by_id || {});
-            
-            const sgrProduct = allProducts.find(p => p?.default_code === 'SGR_FEE');
+            // Odoo 19 standard way to get loaded products
+            const allProducts = this.pos.models['product.product'].getAll();
+            const sgrProduct = allProducts.find(p => p.default_code === 'SGR_FEE');
 
             if (sgrProduct) {
-                // Add the SGR fee.
+                console.log("✅ 4. Found SGR Fee Product! Adding to cart...");
                 const qty = options && options.quantity ? options.quantity : 1;
                 
                 await super.add_product(sgrProduct, {
                     quantity: qty,
-                    price: 0.50,   // Force 50 bani price
-                    merge: true,   // Merges SGR lines so the receipt stays clean
+                    price: 0.50,   
+                    merge: false,  // Set to false temporarily so it definitely shows as a new line
                 });
             } else {
-                console.warn("POS SGR: Product with reference 'SGR_FEE' not found in database.");
+                console.error("❌ 5. SGR ERROR: 'SGR_FEE' product not found. Check if 'Available in POS' is ticked on the Taxa SGR product!");
             }
         }
         return result;
