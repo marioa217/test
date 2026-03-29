@@ -1,22 +1,25 @@
 /** @odoo-module */
 
-import { Order } from "@point_of_sale/app/store/models";
+import { PosOrder } from "@point_of_sale/app/models/pos_order";
 import { patch } from "@web/core/utils/patch";
 
-patch(Order.prototype, {
+patch(PosOrder.prototype, {
     async add_product(product, options) {
         // 1. Add the main product as normal
         const result = await super.add_product(...arguments);
 
         // 2. Check if the added product is subject to SGR
         if (product.is_sgr) {
-            // Locate the SGR fee product by its default internal reference
-            const sgrProduct = Object.values(this.pos.db.product_by_id).find(
-                (p) => p.default_code === 'SGR_FEE'
-            );
+            
+            // 3. Locate the SGR fee product safely across Odoo 18/19 architectural changes
+            const allProducts = this.models?.['product.product']?.getAll() 
+                             || this.pos?.models?.['product.product']?.getAll()
+                             || Object.values(this.pos?.db?.product_by_id || {});
+            
+            const sgrProduct = allProducts.find(p => p?.default_code === 'SGR_FEE');
 
             if (sgrProduct) {
-                // Add the SGR fee. If user adds multiple quantities, apply multiple SGR fees
+                // Add the SGR fee.
                 const qty = options && options.quantity ? options.quantity : 1;
                 
                 await super.add_product(sgrProduct, {
