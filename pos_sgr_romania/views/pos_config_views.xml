@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Add SGR configuration to POS Settings - appended safely to the form -->
+    <record id="view_pos_config_sgr_form" model="ir.ui.view">
+        <field name="name">pos.config.sgr.form</field>
+        <field name="model">pos.config</field>
+        <field name="inherit_id" ref="point_of_sale.pos_config_view_form"/>
+        <field name="arch" type="xml">
+            <!-- Anchor on the 'name' field which always exists in pos.config form -->
+            <xpath expr="//field[@name='name']" position="after">
+                <group string="🇷🇴 SGR - Sistem Garanție-Returnare" name="sgr_config_group">
+                    <field name="sgr_product_id"
+                           string="Produs Taxă SGR (0.50 RON)"
+                           options="{'no_create': True}"
+                           help="Produsul SGR adăugat automat la bonul fiscal pentru produse cu garanție returnare (OUG 74/2022)."/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
