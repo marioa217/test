@@ -1,48 +1,31 @@
 /** @odoo-module */
 
-import { PosStore } from "@point_of_sale/app/services/pos_store";
+import { ProductScreen } from "@point_of_sale/app/screens/product_screen/product_screen";
 import { patch } from "@web/core/utils/patch";
 
-console.log("🚀 SGR V11 LOADED: Product is fixed, passing ID!");
+console.log("🚀 SGR V12 LOADED: The UI Click Simulator!");
 
-patch(PosStore.prototype, {
-    async addLineToCurrentOrder(vals, opts = {}, configure = true) {
-        
-        // 1. Let Odoo 19 add the Cola to the cart normally
-        const line = await super.addLineToCurrentOrder(vals, opts, configure);
-        if (!line) return line;
+patch(ProductScreen.prototype, {
+    async addProductToOrder(product) {
+        // 1. Let Odoo add the Cola exactly how it wants to
+        const result = await super.addProductToOrder(...arguments);
 
-        // 2. Safely get the product that was just added
-        const productId = vals.product_id?.id || vals.product_id || vals.id;
-        const product = this.models['product.product'].get(productId);
-        
-        // 3. Prevent infinite loops if the SGR Fee itself is being added
-        if (product && product.default_code === 'SGR_FEE') {
-            return line;
-        }
-
-        // 4. Check if the product requires SGR
+        // 2. Check if the clicked product requires SGR
         if (product && product.is_sgr) {
             
-            const sgrProduct = this.models['product.product'].getAll().find(p => p.default_code === 'SGR_FEE');
+            // 3. Find the SGR Fee product in local memory
+            const pos = this.pos || this.env?.services?.pos;
+            const sgrProduct = pos?.models['product.product'].getAll().find(p => p.default_code === 'SGR_FEE');
 
             if (sgrProduct) {
-                console.log("✅ Found SGR Fee! Injecting 50 bani into cart...");
-                
-                // CRITICAL FIX: Pass the .id now that the Event Registration bug is gone!
-                await this.addLineToCurrentOrder(
-                    { product_id: sgrProduct.id }, 
-                    { 
-                        quantity: opts?.quantity || 1, 
-                        price: 0.50, 
-                        merge: false 
-                    }, 
-                    false 
-                );
-                console.log("🎉 50 bani SGR added to screen successfully!");
+                console.log("✅ Simulating human click for SGR Fee!");
+                // 4. Literally simulate the cashier clicking the Taxa SGR button!
+                await super.addProductToOrder(sgrProduct);
+            } else {
+                console.error("❌ SGR ERROR: 'SGR_FEE' product missing from POS memory!");
             }
         }
         
-        return line;
+        return result;
     }
 });
