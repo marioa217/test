@@ -1,51 +1,45 @@
-/** @odoo-module */
+/** @odoo-module **/
 
-import { PosStore } from "@point_of_sale/app/store/pos_store";
-import { patch } from "@web/core/utils/patch";
+import { Order } from 'point_of_sale.models';
+import Registries from 'point_of_sale.Registries';
 
-console.log("🚀 SGR V2 LOADED: Connecting directly to PosStore!");
+// 🚀 Proof of life for Odoo 15/16
+console.log("🚀 SGR MODULE LOADED: Connected to Odoo 15/16 Architecture!");
 
-patch(PosStore.prototype, {
-    async addLineToCurrentOrder(vals, opts = {}, configure = true) {
+const PosSgrOrder = (Order) => class PosSgrOrder extends Order {
+    async add_product(product, options) {
         
-        // In Odoo 19, the system sometimes passes the raw product, and sometimes a dictionary
-        const product = vals?.id ? vals : vals?.product_id;
-
-        console.log("🛒 1. PosStore adding product:", product?.display_name || product?.name || "Unknown");
+        console.log("🛒 1. Scanned product:", product?.display_name);
         console.log("🔎 2. Is this SGR?", product?.is_sgr);
 
-        // 1. Add the main product (the Cola) to the cart normally
-        const result = await super.addLineToCurrentOrder(...arguments);
+        // 1. Add the main product
+        const result = await super.add_product(...arguments);
 
-        // 2. If it's an SGR product, add the fee immediately after
+        // 2. Check if the added product is subject to SGR
         if (product && product.is_sgr) {
             console.log("✅ 3. Product is SGR! Looking for the fee product...");
             
-            // Safely locate the SGR product in Odoo 19's database
-            const allProducts = this.models?.['product.product']?.getAll() 
-                             || this.pos?.models?.['product.product']?.getAll() 
-                             || [];
-                             
+            // 3. Locate the SGR fee product in Odoo 15/16 database
+            const allProducts = Object.values(this.pos.db.product_by_id);
             const sgrProduct = allProducts.find(p => p.default_code === 'SGR_FEE');
 
             if (sgrProduct) {
                 console.log("✅ 4. Found SGR Fee Product! Adding to cart...");
+                // Add the SGR fee
+                const qty = options && options.quantity ? options.quantity : 1;
                 
-                // Add the 50 bani fee
-                await super.addLineToCurrentOrder(
-                    sgrProduct, 
-                    { 
-                        quantity: opts?.quantity || 1, 
-                        price: 0.50, 
-                        merge: false // Keeps the fee as a separate, clearly visible line
-                    }, 
-                    false // Don't trigger extra configurations for the fee
-                );
+                await super.add_product(sgrProduct, {
+                    quantity: qty,
+                    price: 0.50,   // Force 50 bani price
+                    merge: false,  // Keeps SGR lines separate
+                });
             } else {
-                console.error("❌ 5. SGR ERROR: 'SGR_FEE' product not found in the local POS database.");
+                console.error("❌ 5. SGR ERROR: 'SGR_FEE' product not found in database.");
             }
         }
-        
         return result;
     }
-});
+}
+
+// Inject our custom logic into the POS Order system
+Registries.Model.extend(Order, PosSgrOrder);
