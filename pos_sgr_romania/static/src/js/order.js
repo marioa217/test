@@ -1,9 +1,10 @@
 /** @odoo-module */
 
-import { PosStore } from "@point_of_sale/app/store/pos_store";
+// 👇 Using the correct Odoo 19 'services' path!
+import { PosStore } from "@point_of_sale/app/services/pos_store";
 import { patch } from "@web/core/utils/patch";
 
-console.log("🚀 SGR V5 LOADED: Listening to Screen Clicks!");
+console.log("🚀 SGR V6 LOADED: Perfect Odoo 19 Path + Click Listener!");
 
 patch(PosStore.prototype, {
     async addProductToCurrentOrder(product, options = {}) {
