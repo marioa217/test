@@ -1,10 +1,12 @@
 {
     'name': 'SGR Romania POS Automation',
-    'version': '1.0',
+    'version': '19.0.1.0',
     'category': 'Point of Sale',
     'depends': ['point_of_sale', 'product'],
-    'data': ['views/product_view.xml'],
-'assets': {
+    'data': [
+        'views/product_view.xml',
+    ],
+    'assets': {
         'point_of_sale.assets': [
             'pos_sgr_romania/static/src/js/pos_sgr.js',
         ],
