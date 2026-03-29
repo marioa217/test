@@ -7,10 +7,8 @@
             <xpath expr="//page[@name='sales']" position="inside">
                 <group string="Setari SGR Romania">
                     <field name="tt_has_sgr" widget="boolean_toggle"/>
-                    <group invisible="not tt_has_sgr">
-                        <field name="tt_sgr_type"/>
-                        <field name="tt_sgr_qty"/>
-                    </group>
+                    <field name="tt_sgr_type" invisible="not tt_has_sgr"/>
+                    <field name="tt_sgr_qty" invisible="not tt_has_sgr"/>
                 </group>
             </xpath>
         </field>
