@@ -1,45 +1,44 @@
-/** @odoo-module **/
+/** @odoo-module */
 
-import { Order } from 'point_of_sale.models';
-import Registries from 'point_of_sale.Registries';
+import { PosStore } from "@point_of_sale/app/services/pos_store";
+import { patch } from "@web/core/utils/patch";
 
-// 🚀 Proof of life for Odoo 15/16
-console.log("🚀 SGR MODULE LOADED: Connected to Odoo 15/16 Architecture!");
+console.log("🚀 SGR V4 LOADED: Native Odoo 19 Architecture!");
 
-const PosSgrOrder = (Order) => class PosSgrOrder extends Order {
-    async add_product(product, options) {
+patch(PosStore.prototype, {
+    async addLineToCurrentOrder(vals, opts = {}, configure = true) {
         
-        console.log("🛒 1. Scanned product:", product?.display_name);
-        console.log("🔎 2. Is this SGR?", product?.is_sgr);
+        // 1. Let Odoo 19 add the main product (e.g., Cola) first
+        const line = await super.addLineToCurrentOrder(vals, opts, configure);
 
-        // 1. Add the main product
-        const result = await super.add_product(...arguments);
+        // 2. Safely identify the product that was just clicked
+        const productId = vals.product_id ? vals.product_id : vals.id;
+        const product = this.models['product.product'].get(productId) || vals;
 
-        // 2. Check if the added product is subject to SGR
+        // 3. Check if it requires the SGR fee
         if (product && product.is_sgr) {
-            console.log("✅ 3. Product is SGR! Looking for the fee product...");
+            console.log("✅ Product is SGR! Adding fee...");
             
-            // 3. Locate the SGR fee product in Odoo 15/16 database
-            const allProducts = Object.values(this.pos.db.product_by_id);
+            // 4. Find the SGR Fee Product in Odoo 19's local memory
+            const allProducts = this.models['product.product'].getAll();
             const sgrProduct = allProducts.find(p => p.default_code === 'SGR_FEE');
 
             if (sgrProduct) {
-                console.log("✅ 4. Found SGR Fee Product! Adding to cart...");
-                // Add the SGR fee
-                const qty = options && options.quantity ? options.quantity : 1;
-                
-                await super.add_product(sgrProduct, {
-                    quantity: qty,
-                    price: 0.50,   // Force 50 bani price
-                    merge: false,  // Keeps SGR lines separate
-                });
+                // 5. Add the 0.50 RON SGR Fee
+                await super.addLineToCurrentOrder(
+                    sgrProduct, 
+                    { 
+                        quantity: opts.quantity || 1, 
+                        price: 0.50, 
+                        merge: false // Keeps the SGR fee separate
+                    }, 
+                    false 
+                );
             } else {
-                console.error("❌ 5. SGR ERROR: 'SGR_FEE' product not found in database.");
+                console.error("❌ SGR ERROR: 'SGR_FEE' product not found in the database!");
             }
         }
-        return result;
+        
+        return line;
     }
-}
-
-// Inject our custom logic into the POS Order system
-Registries.Model.extend(Order, PosSgrOrder);
+});
