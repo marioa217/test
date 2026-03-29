@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Add SGR configuration to POS Settings -->
+    <record id="view_pos_config_sgr_form" model="ir.ui.view">
+        <field name="name">pos.config.sgr.form</field>
+        <field name="model">pos.config</field>
+        <field name="inherit_id" ref="point_of_sale.pos_config_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@id='pos_self_order_config']" position="before">
+                <div class="o_setting_box">
+                    <div class="o_setting_left_pane">
+                        <label for="sgr_product_id" string="SGR"/>
+                    </div>
+                    <div class="o_setting_right_pane">
+                        <div class="o_setting_right_pane">
+                            <span class="o_form_label fw-bold">🇷🇴 SGR - Sistem Garanție-Returnare</span>
+                            <div class="text-muted">
+                                Selectați produsul SGR care va fi adăugat automat în bon
+                                când se vinde un produs cu taxa SGR activată (OUG 74/2022).
+                            </div>
+                            <field name="sgr_product_id"
+                                   string="Produs Taxă SGR"
+                                   options="{'no_create': True}"
+                                   placeholder="ex: Taxă SGR - 0.50 RON"/>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
