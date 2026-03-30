@@ -1,0 +1,27 @@
+{
+    "name": "Restaurant Recipe Management",
+    "summary": "Recipe-based ingredient consumption for restaurant POS sales",
+    "version": "19.0.1.0.0",
+    "category": "Point of Sale",
+    "author": "OpenAI",
+    "license": "LGPL-3",
+    "depends": [
+        "point_of_sale",
+        "stock",
+        "product",
+        "uom",
+    ],
+    "data": [
+        "security/security.xml",
+        "security/ir.model.access.csv",
+        "data/stock_location_data.xml",
+        "data/sequence_data.xml",
+        "views/restaurant_recipe_views.xml",
+        "views/restaurant_recipe_consumption_views.xml",
+        "views/product_template_views.xml",
+        "views/pos_config_views.xml",
+        "views/menu_views.xml",
+    ],
+    "installable": True,
+    "application": False,
+}

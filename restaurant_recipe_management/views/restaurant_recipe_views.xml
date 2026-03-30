@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_restaurant_recipe_list" model="ir.ui.view">
+        <field name="name">restaurant.recipe.list</field>
+        <field name="model">restaurant.recipe</field>
+        <field name="arch" type="xml">
+            <list string="Recipes">
+                <field name="name"/>
+                <field name="product_tmpl_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="active"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="theoretical_cost" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                <field name="line_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_restaurant_recipe_form" model="ir.ui.view">
+        <field name="name">restaurant.recipe.form</field>
+        <field name="model">restaurant.recipe</field>
+        <field name="arch" type="xml">
+            <form string="Recipe">
+                <header>
+                    <field name="active" widget="boolean_toggle"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_consumption_logs" type="object" class="oe_stat_button" icon="fa-history">
+                            <field name="consumption_log_count" widget="statinfo" string="Consumption Logs"/>
+                        </button>
+                        <button name="action_open_product" type="object" class="oe_stat_button" icon="fa-cutlery">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Product</span>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="product_tmpl_id"/>
+                            <field name="product_id" invisible="not product_tmpl_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="consumption_location_id"/>
+                        </group>
+                        <group>
+                            <field name="allow_negative_stock"/>
+                            <field name="theoretical_cost" widget="monetary" options="{'currency_field': 'currency_id'}" readonly="1"/>
+                            <field name="line_count" readonly="1"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Ingredients">
+                            <field name="line_ids" nolabel="1">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="ingredient_product_id"/>
+                                    <field name="quantity"/>
+                                    <field name="uom_id"/>
+                                    <field name="waste_percent"/>
+                                    <field name="currency_id" column_invisible="True"/>
+                                    <field name="line_theoretical_cost" widget="monetary" options="{'currency_field': 'currency_id'}" readonly="1"/>
+                                    <field name="notes" optional="hide"/>
+                                </list>
+                                <form string="Ingredient">
+                                    <group>
+                                        <field name="sequence"/>
+                                        <field name="ingredient_product_id"/>
+                                        <field name="quantity"/>
+                                        <field name="uom_id"/>
+                                        <field name="waste_percent"/>
+                                        <field name="is_optional"/>
+                                        <field name="currency_id" invisible="1"/>
+                                        <field name="standard_cost_unit" widget="monetary" options="{'currency_field': 'currency_id'}" readonly="1"/>
+                                        <field name="line_theoretical_cost" widget="monetary" options="{'currency_field': 'currency_id'}" readonly="1"/>
+                                        <field name="notes"/>
+                                    </group>
+                                </form>
+                            </field>
+                        </page>
+                        <page string="Notes">
+                            <field name="notes" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_restaurant_recipe" model="ir.actions.act_window">
+        <field name="name">Recipes</field>
+        <field name="res_model">restaurant.recipe</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create a recipe for a POS dish.</p>
+        </field>
+    </record>
+</odoo>
