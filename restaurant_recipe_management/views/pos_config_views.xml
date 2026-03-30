@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="pos_config_form_restaurant_recipe" model="ir.ui.view">
+        <field name="name">pos.config.form.restaurant.recipe</field>
+        <field name="model">pos.config</field>
+        <field name="inherit_id" ref="point_of_sale.pos_config_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='configuration']/div[last()]" position="after">
+                <div class="row mt16 o_settings_container">
+                    <setting string="Recipe Management" help="Consume ingredient stock from POS sales using recipe definitions.">
+                        <field name="recipe_management_enabled"/>
+                        <div class="content-group mt16" invisible="not recipe_management_enabled">
+                            <div class="row mb-2">
+                                <div class="col-lg-6 o_light_label">
+                                    <label for="recipe_default_source_location_id"/>
+                                </div>
+                                <div class="col-lg-6">
+                                    <field name="recipe_default_source_location_id"/>
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-lg-6 o_light_label">
+                                    <label for="recipe_block_on_insufficient_stock"/>
+                                </div>
+                                <div class="col-lg-6">
+                                    <field name="recipe_block_on_insufficient_stock"/>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-6 o_light_label">
+                                    <label for="recipe_auto_process_on_order_paid"/>
+                                </div>
+                                <div class="col-lg-6">
+                                    <field name="recipe_auto_process_on_order_paid"/>
+                                </div>
+                            </div>
+                        </div>
+                    </setting>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>
